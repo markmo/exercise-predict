@@ -23,7 +23,7 @@ Read more: http://groupware.les.inf.puc-rio.br/har#weight_lifting_exercises#ixzz
 
 The following libraries are used:
 
-```{r results='hide'}
+```{r message=F}
 library(caret)
 library(randomForest)
 ```
@@ -49,7 +49,7 @@ training <- training[, -(1:7)]
 testing <- testing[, -(1:7)]
 ```
 
-Split the training data into train and validation sets.
+Split the training data into train and cross-validation (test) sets.
 
 ```{r}
 in.train <- createDataPartition(training$classe, p=0.6, list=F)
@@ -105,7 +105,9 @@ featurePlot(x=train[, grep("forearm$", names(train))], y=train.y, plot="pairs")
 
 ## Prediction
 
-After evaluating a number of algorithms, Random Forests was selected as the most useful. Testing the model below against the cross-validation test set shows an accuracy 99.5%. The Kappa statistic, an alternative measure of error, is 99.3%. (The advantages of the Kappa statistic include that it attempts to correct for chance expected agreement, and is not affected by a few zero cell entries.)
+After evaluating a number of algorithms, Random Forests was selected as the most useful.
+
+A cross-validation test set was created using 40% of observations from the training file. Testing the model below against the cross-validation test set shows an accuracy 99.5%. The Kappa statistic, an alternative measure of error, is 99.3%. (The advantages of the Kappa statistic include that it attempts to correct for chance expected agreement, and is not affected by a few zero cell entries.)
 
 ```{r}
 modFit <- randomForest(train, train.y)
@@ -119,3 +121,5 @@ vi <- varImp(modFit)
 top.vars <- rownames(vi)[order(-vi)[1:10]]
 top.vars
 ```
+
+The model was also tested against the out-of-sample (testing) set, and correctly predicted all 20 cases.
