@@ -1,0 +1,121 @@
+---
+title: "Predicting how well an excercise is performed"
+author: "Mark M"
+date: "19 September 2014"
+output: html_document
+---
+
+## Introduction
+
+Data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants performing weight lifting excercises was collected. The variable to predict has 1 of 5 possible class values:
+
+* A - exactly according to the specification
+* B - throwing the elbows to the front
+* C - lifting the dumbbell only halfway
+* D - lowering the dumbbell only halfway
+* E - throwing the hips to the front
+
+Class A corresponds to the correct specified execution of the exercise, while the other 4 classes correspond to common mistakes.
+
+Read more: http://groupware.les.inf.puc-rio.br/har#weight_lifting_exercises#ixzz3DkZJOVkC
+
+## Pre-processing
+
+The following libraries are used:
+
+```{r results='hide'}
+library(caret)
+library(randomForest)
+```
+
+It is assumed that the training and test datasets have already been downloaded into a 'data' subdirectory.
+
+```{r}
+#download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv", "data/pml-training.csv", method="curl")
+#download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv", "data/pml-testing.csv", method="curl")
+```
+
+The training and test datasets are loaded as CSV files, substituting NA for missing values.
+
+```{r cache=T}
+training <- read.csv("data/pml-training.csv", na.strings=c("", "NA", "#DIV/0!"))
+testing <- read.csv("data/pml-testing.csv", na.strings=c("", "NA", "#DIV/0!"))
+```
+
+Remove metadata such as username and time fields.
+
+```{r}
+training <- training[, -(1:7)]
+testing <- testing[, -(1:7)]
+```
+
+Split the training data into train and validation sets.
+
+```{r}
+in.train <- createDataPartition(training$classe, p=0.6, list=F)
+train <- training[in.train, ]
+test <- training[-in.train, ]
+```
+
+The target variable (y) is the "classe" column.
+
+```{r}
+train.y <- train$classe
+in.y <- grep("classe", colnames(train))
+train <- train[, -in.y]
+test.y <- test$classe
+test <- test[, -in.y]
+```
+
+Omit "near zero variance" predictors.
+
+```{r}
+nzv <- nearZeroVar(train)
+train <- train[, -nzv]
+test <- test[, -nzv]
+testing <- testing[, -nzv]
+```
+
+Omit columns with missing values.
+
+```{r}
+na.columns <- apply(train, 2, function (x) any(is.na(x)))
+train <- train[, !na.columns]
+test <- test[, !na.columns]
+testing <- testing[, !na.columns]
+```
+
+Remove highly correlated columns.
+
+```{r}
+cor <- cor(train)
+highlyCor <- findCorrelation(cor, cutoff=0.95)
+train <- train[, -highlyCor]
+test <- test[, -highlyCor]
+testing <- testing[, -highlyCor]
+```
+
+## Exploratory Analysis
+
+Feature plots of various combinations of variables were performed, such as the following. No discernible patterns or strong predictors were uncovered from visual analysis.
+
+```{r}
+featurePlot(x=train[, grep("forearm$", names(train))], y=train.y, plot="pairs")
+```
+
+## Prediction
+
+After evaluating a number of algorithms, Random Forests was selected as the most useful. Testing the model below against the cross-validation test set shows an accuracy 99.5%. The Kappa statistic, an alternative measure of error, is 99.3%. (The advantages of the Kappa statistic include that it attempts to correct for chance expected agreement, and is not affected by a few zero cell entries.)
+
+```{r}
+modFit <- randomForest(train, train.y)
+confusionMatrix(predict(modFit, newdata=test), test.y)
+```
+
+The top variables in order of importance are:
+
+```{r}
+vi <- varImp(modFit)
+top.vars <- rownames(vi)[order(-vi)[1:10]]
+top.vars
+```

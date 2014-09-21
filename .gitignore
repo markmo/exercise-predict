@@ -1,0 +1,9 @@
+*.txt
+.RData
+.Rhistory
+.Rproj.user
+report_cache/
+report_files/
+process.R
+*.Rproj
+
