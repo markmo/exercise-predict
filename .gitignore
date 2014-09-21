@@ -1,9 +1,11 @@
 *.txt
 .RData
 .Rhistory
-.Rproj.user
+.Rproj.user/
 report_cache/
 report_files/
 process.R
 *.Rproj
 
+# Example code in package build process
+*-Ex.R
