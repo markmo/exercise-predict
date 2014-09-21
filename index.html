@@ -75,12 +75,8 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 <div id="pre-processing" class="section level2">
 <h2>Pre-processing</h2>
 <p>The following libraries are used:</p>
-<pre class="r"><code>library(caret)</code></pre>
-<pre><code>## Loading required package: lattice
-## Loading required package: ggplot2</code></pre>
-<pre class="r"><code>library(randomForest)</code></pre>
-<pre><code>## randomForest 4.6-10
-## Type rfNews() to see new features/changes/bug fixes.</code></pre>
+<pre class="r"><code>library(caret)
+library(randomForest)</code></pre>
 <p>It is assumed that the training and test datasets have already been downloaded into a ‘data’ subdirectory.</p>
 <pre class="r"><code>#download.file(&quot;https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv&quot;, &quot;data/pml-training.csv&quot;, method=&quot;curl&quot;)
 #download.file(&quot;https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv&quot;, &quot;data/pml-testing.csv&quot;, method=&quot;curl&quot;)</code></pre>
@@ -90,7 +86,7 @@ testing &lt;- read.csv(&quot;data/pml-testing.csv&quot;, na.strings=c(&quot;&quo
 <p>Remove metadata such as username and time fields.</p>
 <pre class="r"><code>training &lt;- training[, -(1:7)]
 testing &lt;- testing[, -(1:7)]</code></pre>
-<p>Split the training data into train and validation sets.</p>
+<p>Split the training data into train and cross-validation (test) sets.</p>
 <pre class="r"><code>in.train &lt;- createDataPartition(training$classe, p=0.6, list=F)
 train &lt;- training[in.train, ]
 test &lt;- training[-in.train, ]</code></pre>
@@ -125,7 +121,8 @@ testing &lt;- testing[, -highlyCor]</code></pre>
 </div>
 <div id="prediction" class="section level2">
 <h2>Prediction</h2>
-<p>After evaluating a number of algorithms, Random Forests was selected as the most useful. Testing the model below against the cross-validation test set shows an accuracy 99.5%. The Kappa statistic, an alternative measure of error, is 99.3%. (The advantages of the Kappa statistic include that it attempts to correct for chance expected agreement, and is not affected by a few zero cell entries.)</p>
+<p>After evaluating a number of algorithms, Random Forests was selected as the most useful.</p>
+<p>A cross-validation test set was created using 40% of observations from the training file. Testing the model below against the cross-validation test set shows an accuracy 99.5%. The Kappa statistic, an alternative measure of error, is 99.3%. (The advantages of the Kappa statistic include that it attempts to correct for chance expected agreement, and is not affected by a few zero cell entries.)</p>
 <pre class="r"><code>modFit &lt;- randomForest(train, train.y)
 confusionMatrix(predict(modFit, newdata=test), test.y)</code></pre>
 <pre><code>## Confusion Matrix and Statistics
@@ -167,6 +164,7 @@ top.vars</code></pre>
 ##  [4] &quot;pitch_belt&quot;        &quot;magnet_dumbbell_y&quot; &quot;roll_forearm&quot;     
 ##  [7] &quot;magnet_belt_y&quot;     &quot;magnet_dumbbell_x&quot; &quot;magnet_belt_z&quot;    
 ## [10] &quot;roll_dumbbell&quot;</code></pre>
+<p>The model was also tested against the out-of-sample (testing) set, and correctly predicted all 20 cases.</p>
 </div>
 
 
